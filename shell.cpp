@@ -48,30 +48,84 @@ class Shell {
             typedef tokenizer<char_separator<char> > tokenizer;
             char_separator<char> sep(" ");
             tokenizer tokens(cmdLine, sep);
-            vector<string> v;
+            vector<string> v; //Stores all tokens spaced out.
             string test;
+            
+            //Checks for each token that has been spaced out, and puts it in a vector.
             for (tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it)
             {
+                //Is the token just a connector?
                 if(*it == "||" || *it == "&&" || *it == ";")
                 {
                     std::cout << "Connector detected!" << std::endl;
-                    v.push_back(test);
-                    test = "";
-                    v.push_back(*it);
+                    v.push_back(test); //Push back the string being built.
+                    test = ""; //Reset the string.
+                    v.push_back(*it); //Push back the connector itself.
 
                 }
                 else
                 {
-                    test = test + *it + " ";
+                    test = test + *it + " "; //Add the token onto the string.
                 }
-                //cout << *it;
             }
+            v.push_back(test); //Push the string in case there are no connectors.
+            
+            v = analyze_split(v);
+            
+            cout << "Splitting..." << std::endl;
             
             for (int i = 0; i < v.size(); ++i)
             {
                 cout << v.at(i) << endl;
             }
-            //cout << endl;
+        }
+        /*Potential Problem: This algorithm will keep repeating connectors,
+        ie. ls&&&&ls
+        And since we split the two pairs of && into two elements, it'll attempt
+        to call the connector twice. I suppose we can check for the when we
+        start executing the command.*/
+        vector<string> analyze_split(vector<string>& v)
+        {
+            vector<string> commands;
+            //Look at each string in the vector.
+            string temp;
+            for(int i = 0; i < v.size(); ++i)
+            {
+                //Look at each letter of each string for connectors.
+                for(int j = 0; j < v.at(i).size(); ++j)
+                {
+                    //Tests whether or not we found a connector.
+                    if(v.at(i).at(j) == '|' && v.at(i).at(j + 1) == '|')
+                    {
+                        commands.push_back(temp);
+                        temp = "||";
+                        commands.push_back(temp);
+                        temp = "";
+                        j++;
+                    }
+                    else if(v.at(i).at(j) == '&' && v.at(i).at(j + 1) == '&')
+                    {
+                        commands.push_back(temp);
+                        temp = "&&";
+                        commands.push_back(temp);
+                        temp = "";
+                        j++;
+                    }
+                    else if(v.at(i).at(j) == ';')
+                    {
+                        commands.push_back(temp);
+                        temp = ";";
+                        commands.push_back(temp);
+                        temp = "";
+                    }
+                    else
+                    {
+                        temp = temp + v.at(i).at(j);
+                    }
+                }
+            }
+            commands.push_back(temp); //Push the string in case there are no connectors.
+            return commands; //Input should now be organized correctly by parts.
         }
         
         /*
