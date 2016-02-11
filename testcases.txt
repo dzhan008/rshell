@@ -1,0 +1,67 @@
+Test 1: Edge Cases
+    User presses Return upon entering shell.
+    "<Enter>"
+    
+    User exits shell immediately.
+    "exit"
+
+Test 2: Single Commands
+    User types in one command followed by Return.
+    "ls"
+    
+    User types in one command followed by Return.
+    "cd"
+    
+    User enters command with an argument list
+    "ls -a"
+
+Test 3: Multiple Commands with Connectors
+    User enters command connected by ;
+    "ls -a; cd"
+    
+    User enters command connected by ;
+    "ls -a;cd"
+    
+    User enters command connected by && and first command succeeds.
+    "mkdir new $$ ls"
+    
+    User enters command connected by && and first command succeeds.
+    "mkdir new$$ls"
+    
+    User enters command connected by && and first command fails.
+    "cd <nonexistent file> && ls"
+    
+    User enters command connected by || and first command succeeds.
+    "cd || ls"
+    
+    User enters command connected by || and first command fails.
+    "cd <nonexistent fil> $$ ls"
+    
+Test 4: Commands with comments
+    User enters a single-line comment
+    "#this is a comment"
+    
+    User enters a command followed by a comment
+    "cd #this is a comment"
+    
+    User enters a command within a comment
+    "#cd"
+    
+Test 5: Errors
+    User enters gibberish
+    "aaaa"
+    
+    User enters command with argument list incorrectly
+    "ls-a"
+    
+    User enters chained commands, first correct, second incorrect
+    "ls -a && exits
+    
+    User enters chained commands, first incorrect, second correct
+    "exits && ls -a
+    
+    User enters chained commands, both incorrect
+    "exits && ls-s
+
+    User enters chained commands, with incorrect connector
+    "ls |$ echo hello"
