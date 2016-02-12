@@ -1,4 +1,6 @@
 #include <boost/tokenizer.hpp>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string>
 #include <sys/wait.h>
@@ -12,108 +14,167 @@ using namespace boost;
 class Shell {
     private:
         string command;
-        vector <string> v;
+        bool exit_override;
+        //Step 1: Ask for command
+        //Step 2: Parse command
+        //Step 3: Execute command
+        //Step 4: Account for connectors
     public:
-        Shell() {};
+        Shell() {exit_override = false;};
         ~Shell() {};
-        void run() 
+        bool run() 
         {
-            
-            char * name;
+            char* name;
             char hostname[1024];
             gethostname(hostname, 1024);
             struct passwd* pass;
             pass = getpwuid(getuid());
             name = pass->pw_name;
-               
-            while(command != "exit") 
+            exit_override = false;   
+            while(command != "exit" || !exit_override) 
             {
-                cout << name << "@" << hostname << "$ ";
-                getline(cin, command);
-                cout << endl;
-                parse(command);
-            }
-        }
-        // Note that we cannot distinguish between "|" and "||" so if a user typed "|" on accident parsing would not catch it.
-        // ie. char_separator<char> sep2("|"); == char_separator<char> sep2("||");
-        void parse(string cmdLine) 
-        {
-            //Also cmdLine does not get updated each time we parse. Forgot about that.
-            
-            // typedef tokenizer<char_separator<char> > tokenizer1;
-            // char_separator<char> sep1(" ");
-            // tokenizer1 tokens1(cmdLine, sep1);
-            
-            //Parses by each command
-            typedef tokenizer<char_separator<char> > tokenizer;
-            char_separator<char> sep(" ");
-            tokenizer tokens(cmdLine, sep);
-            vector<string> v; //Stores all tokens spaced out.
-            string test;
-            
-            //Checks for each token that has been spaced out, and puts it in a vector.
-            for (tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it)
-            {
-                //Is the token just a connector?
-                if(*it == "||" || *it == "&&" || *it == ";")
+                cout << "exit_override:" << exit_override << endl;
+                if(exit_override)
                 {
-                    std::cout << "Connector detected!" << std::endl;
-                    v.push_back(test); //Push back the string being built.
-                    test = ""; //Reset the string.
-                    v.push_back(*it); //Push back the connector itself.
-
+                    cout << "Attempting to exit..." << endl;
+                    return false;
                 }
                 else
                 {
-                    test = test + *it + " "; //Add the token onto the string.
+                cout << name << "@" << hostname << "$ ";
+                getline(cin, command);
+                if(command == "exit") //If the command is just exit
+                {
+                    return false;  
+                }
+                else if(command != "") //If we entered an actual command
+                {
+                    if(parse(command) == 2)
+                    {
+                        cout << "setting override..." << endl;
+                        exit_override = true;
+                    }
+                }
+                else
+                {
+                    command = "pwd";
+                    parse(command);
+                }
                 }
             }
-            v.push_back(test); //Push the string in case there are no connectors.
+        }
+        int parse(string cmdLine) 
+        {
+            vector <string> v;
+            //Defines a tokenizer type that seperates cmdLine by spaces
+            typedef tokenizer<char_separator<char> > tokenizer;
+            char_separator<char> sep(" ");
+            tokenizer tok(cmdLine, sep);
             
+            
+            //Checks each token and puts it in a vector.
+            for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+            {
+                    v.push_back(*it); 
+            }
             v = analyze_split(v);
-            
-            cout << "Splitting..." << std::endl;
-            
+                            
+            vector<string> command_to_execute;
             for (int i = 0; i < v.size(); ++i)
             {
+                //If comment is seen, we don't push it to our command.
+                //Instead, we execute it and jump out of the loop.
+                if(v.at(i).at(0) == '#')
+                {
+                    bool temp = execute(command_to_execute);
+                    return 1;
+                }
+                else if (i == v.size() - 1)
+                {
+                    if (v.at(i) == "exit")
+                    {
+                        cout << "Oh hey an exit!" << endl;
+                        return 2;
+                    }
+                    command_to_execute.push_back(v.at(i));
+                    bool temp = execute(command_to_execute);
+                    if (temp == false)
+                    {
+                        return 2; //Return code for exit
+                    }
+                }
+                else if (v.at(i) == "||" || v.at(i) == "&&" || v.at(i) == ";")
+                {
+                    bool temp = execute(command_to_execute);
+                    command_to_execute.clear();
+                    temp = connector(temp, v.at(i));
+                    if (temp == false)
+                    {
+                        if(v.at(i-1) == "exit")
+                        {
+                            return 2;
+                        }
+                        return 1; //Return code for failure
+                    }
+                }
+                else
+                {
+                    command_to_execute.push_back(v.at(i));
+                }
                 cout << v.at(i) << endl;
             }
+            return 0; //Return code for command sucessfully parsed
         }
         /*Potential Problem: This algorithm will keep repeating connectors,
         ie. ls&&&&ls
         And since we split the two pairs of && into two elements, it'll attempt
         to call the connector twice. I suppose we can check for the when we
         start executing the command.*/
+        
+        //Accounts for connectors mixed with other text
         vector<string> analyze_split(vector<string>& v)
         {
             vector<string> commands;
             //Look at each string in the vector.
-            string temp;
+
             for(int i = 0; i < v.size(); ++i)
             {
+                string temp;
                 //Look at each letter of each string for connectors.
                 for(int j = 0; j < v.at(i).size(); ++j)
                 {
                     //Tests whether or not we found a connector.
                     if(v.at(i).at(j) == '|' && v.at(i).at(j + 1) == '|')
                     {
-                        commands.push_back(temp);
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+
                         temp = "||";
                         commands.push_back(temp);
                         temp = "";
-                        j++;
+                        ++j;
                     }
                     else if(v.at(i).at(j) == '&' && v.at(i).at(j + 1) == '&')
                     {
-                        commands.push_back(temp);
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+                        
                         temp = "&&";
                         commands.push_back(temp);
                         temp = "";
-                        j++;
+                        ++j;
                     }
                     else if(v.at(i).at(j) == ';')
                     {
-                        commands.push_back(temp);
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+                        
                         temp = ";";
                         commands.push_back(temp);
                         temp = "";
@@ -123,64 +184,95 @@ class Shell {
                         temp = temp + v.at(i).at(j);
                     }
                 }
+                if(temp != "")
+                {
+                    commands.push_back(temp);
+                }
+
             }
-            commands.push_back(temp); //Push the string in case there are no connectors.
-            return commands; //Input should now be organized correctly by parts.
+            //Push the string in case there are no connectors.
+            //commands.push_back(temp);
+            //Input should now be organized correctly by parts.
+            return commands;
         }
         
-        /*
-        Notes: If we can't used an escaped_list_separator, we can simply split the characters by spaces. We then make a check where if a string is not ||, &&, or ;,
-        then we concatencate it to the original string. For example:
-        
-        If our tokenizer has the strings "Hi" " Bye", "Meep", "||"
-        We can have a string test and parse through the tokenizer to add Hi, Bye, and Meep together. However, if we see a || we can store it into another string.
-        Then, we move on. This way we can grab all the arguments AND the connector in two separate strings.
-        
-        However, we may have a problem with this. Since we're splitting these up into different strings with delimiters, we need to find a way to keep the white space.
-        We can keep it using Kept Limiters.
-        */
-        
-        // bool execute(vector<string> v)
-        // {
-        //     for(int i = 0; i < v.size(); ++i)
-        //     {
-        //         if(v.at(i) == "||")
-        //         {
-                    
-        //         }
-        //         else if(v.at(i) == "&&")
-        //         {
-                    
-        //         }
-        //         else if(v.at(i) == ";")
-        //         {
-                    
-        //         }
-        //         else
-        //         {
+        //Executes the command.
+        bool execute(vector<string>cmd)
+        {
+                //Accounts for case if a comment is inputted.
+                if (cmd.size() == 0)
+                {
+                    return false;
+                }
+                else if (cmd.at(0) == "exit" && cmd.size() == 1)
+                {
+                    cout << "Exit statement hit." << endl;
+                    return false;
+                }
+                else
+                {
+                char* temp[cmd.size()+ 1];
+                //Sets the command in a c-string form.
+                for(int i = 0; i < cmd.size(); ++i)
+                {
+                    temp[i] = (char*)cmd.at(i).c_str();
+                }
+                //We push a null character at the end of the array to let execvp
+                //know where to end with the command.
+                temp[cmd.size()] = NULL;
                 
-        //         }
-        //         char* temp[2];
-        //         temp[0] = (char*)v.at(i).c_str();
-        //         temp[1] = NULL;
-        //         pit_t pid = fork();
-        //         if (pid == 0)
-        //         {
-        //             if(execvp(temp[0], temp) == -1)
-        //             {
-        //                 perror ("exec");
-        //                 return false;
-        //             }
-        //         }
-        //         if (pid > 0)
-        //         {
-        //             if (wait(0) == -1)
-        //             {
-        //                 perror("wait");
-        //             }
-        //         }
-
-        //     }
-        // }
-        // return true;
-    };
+                pid_t pid = fork();
+                if (pid == 0)
+                {
+                    //If the command does not work
+                    if(execvp(temp[0], temp) == -1)
+                    {
+                        perror("exec");
+                        return false;
+                    }
+                }
+                if (pid > 0)
+                {
+                    if (wait(0) == -1)
+                    {
+                        perror("wait");
+                    }
+                }
+                return true;
+                }
+        }
+        bool connector(bool cmdExecuted, string connector)
+        {
+            if(connector == "||") 
+            {
+                if(cmdExecuted == false)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if(connector == "&&")
+            {
+                if(cmdExecuted == true)
+                {
+                    return true;  
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if(connector == "#")
+            {
+                return false;
+            }
+            //Semicolon will always execute next command 
+            else 
+            {
+                return true;    
+            }
+        }
+};
