@@ -51,10 +51,8 @@ class Shell {
                     {
 		        if(parse(command) == 2)
                         {
-			    cout << "Attempting to Exit." << endl;
                             exit_override = true;
 			    exit(0);
-			    cout << "Exiting..." << endl;
                         }
                     }
                     else
@@ -80,6 +78,11 @@ class Shell {
                     v.push_back(*it); 
             }
             v = analyze_split(v);
+
+	    if (v.at(0) == "exit")
+	    {
+		    return 2;
+	    }
                             
             vector<string> command_to_execute;
             for (unsigned i = 0; i < v.size(); ++i)
@@ -243,6 +246,9 @@ class Shell {
                 return true;
                 }
         }
+	//Connector Logic is put here.
+	//Made to decide whether or not to execute the next command
+	//in sequence given the connector.
         bool connector(bool cmdExecuted, string connector)
         {
             if(connector == "||") 
