@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <vector>
 #include <pwd.h>
+#include <iostream>
 
 using namespace std;
 using namespace boost;
@@ -22,7 +23,7 @@ class Shell {
     public:
         Shell() {exit_override = false;};
         ~Shell() {};
-        bool run() 
+        void run() 
         {
             char* name;
             char hostname[1024];
@@ -33,33 +34,34 @@ class Shell {
             exit_override = false;   
             while(command != "exit" || !exit_override) 
             {
-                cout << "exit_override:" << exit_override << endl;
+             
                 if(exit_override)
                 {
-                    cout << "Attempting to exit..." << endl;
-                    return false;
+                    return;
                 }
                 else
                 {
-                cout << name << "@" << hostname << "$ ";
-                getline(cin, command);
-                if(command == "exit") //If the command is just exit
-                {
-                    return false;  
-                }
-                else if(command != "") //If we entered an actual command
-                {
-                    if(parse(command) == 2)
+               	    cout << name << "@" << hostname << "$ ";
+                    getline(cin, command);
+                    if(command == "exit") //If the command is just exit
                     {
-                        cout << "setting override..." << endl;
-                        exit_override = true;
+                        return;  
                     }
-                }
-                else
-                {
-                    command = "pwd";
-                    parse(command);
-                }
+                    else if(command != "") //If we entered an actual command
+                    {
+		        if(parse(command) == 2)
+                        {
+			    cout << "Attempting to Exit." << endl;
+                            exit_override = true;
+			    exit(0);
+			    cout << "Exiting..." << endl;
+                        }
+                    }
+                    else
+                    {
+                        command = "pwd";
+                        parse(command);
+                    }
                 }
             }
         }
@@ -80,20 +82,20 @@ class Shell {
             v = analyze_split(v);
                             
             vector<string> command_to_execute;
-            for (int i = 0; i < v.size(); ++i)
+            for (unsigned i = 0; i < v.size(); ++i)
             {
                 //If comment is seen, we don't push it to our command.
                 //Instead, we execute it and jump out of the loop.
                 if(v.at(i).at(0) == '#')
                 {
-                    bool temp = execute(command_to_execute);
+                   // bool temp = execute(command_to_execute);
+
                     return 1;
                 }
-                else if (i == v.size() - 1)
+                else if (i == (unsigned)v.size() - 1)
                 {
                     if (v.at(i) == "exit")
                     {
-                        cout << "Oh hey an exit!" << endl;
                         return 2;
                     }
                     command_to_execute.push_back(v.at(i));
@@ -105,23 +107,22 @@ class Shell {
                 }
                 else if (v.at(i) == "||" || v.at(i) == "&&" || v.at(i) == ";")
                 {
-                    bool temp = execute(command_to_execute);
+                    bool cmd_output = execute(command_to_execute);
                     command_to_execute.clear();
-                    temp = connector(temp, v.at(i));
-                    if (temp == false)
-                    {
-                        if(v.at(i-1) == "exit")
-                        {
-                            return 2;
-                        }
-                        return 1; //Return code for failure
+                    bool cnt_output = connector(cmd_output, v.at(i));
+                    if (cnt_output == false)
+                    {    
+                        if(cmd_output == false)
+			{
+			    return 1; //Return code for failure
+			}
                     }
                 }
                 else
                 {
                     command_to_execute.push_back(v.at(i));
                 }
-                cout << v.at(i) << endl;
+               // cout << v.at(i) << endl;
             }
             return 0; //Return code for command sucessfully parsed
         }
@@ -137,11 +138,11 @@ class Shell {
             vector<string> commands;
             //Look at each string in the vector.
 
-            for(int i = 0; i < v.size(); ++i)
+            for(unsigned i = 0; i < v.size(); ++i)
             {
                 string temp;
                 //Look at each letter of each string for connectors.
-                for(int j = 0; j < v.at(i).size(); ++j)
+                for(unsigned j = 0; j < v.at(i).size(); ++j)
                 {
                     //Tests whether or not we found a connector.
                     if(v.at(i).at(j) == '|' && v.at(i).at(j + 1) == '|')
@@ -211,9 +212,10 @@ class Shell {
                 }
                 else
                 {
-                char* temp[cmd.size()+ 1];
+		    char **temp = new char*[cmd.size() + 1];
+               // char* temp[cmd.size()+ 1];
                 //Sets the command in a c-string form.
-                for(int i = 0; i < cmd.size(); ++i)
+                for(unsigned i = 0; i < cmd.size(); ++i)
                 {
                     temp[i] = (char*)cmd.at(i).c_str();
                 }
