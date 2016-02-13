@@ -55,11 +55,6 @@ class Shell {
 			    exit(0);
                         }
                     }
-                    else
-                    {
-                        command = "pwd";
-                        parse(command);
-                    }
                 }
             }
         }
@@ -114,8 +109,12 @@ class Shell {
                     command_to_execute.clear();
                     bool cnt_output = connector(cmd_output, v.at(i));
                     if (cnt_output == false)
-                    {    
-                        if(cmd_output == false)
+                    {   
+			if (cmd_output == true)
+			{       
+				++i;
+			}
+                        if (cmd_output == false)
 			{
 			    return 1; //Return code for failure
 			}
