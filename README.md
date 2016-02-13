@@ -88,5 +88,7 @@ You are also allowed to chain as many connectors together as possible. Example:
 User enters wrong command followed by an || connector and followed by exit. 
 The program does not exit the shell as it should. It reprompts for the next command instead.
 
+Adding three or more of the same connector is supposed to throw an error on the entire command line, but it throws an out of range error.
+
 If there are any other bugs you encounter while running this program, feel free to create an issue on Github.
 We appreciate it!
