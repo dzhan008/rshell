@@ -80,14 +80,14 @@ class Shell {
 	    }
                             
             vector<string> command_to_execute;
+	    bool last_output;
             for (unsigned i = 0; i < v.size(); ++i)
             {
                 //If comment is seen, we don't push it to our command.
                 //Instead, we execute it and jump out of the loop.
                 if(v.at(i).at(0) == '#')
                 {
-                   // bool temp = execute(command_to_execute);
-
+                    execute(command_to_execute);
                     return 1;
                 }
                 else if (i == (unsigned)v.size() - 1)
@@ -105,20 +105,32 @@ class Shell {
                 }
                 else if (v.at(i) == "||" || v.at(i) == "&&" || v.at(i) == ";")
                 {
-                    bool cmd_output = execute(command_to_execute);
-                    command_to_execute.clear();
-                    bool cnt_output = connector(cmd_output, v.at(i));
-                    if (cnt_output == false)
-                    {   
-			if (cmd_output == true)
-			{       
-				++i;
-			}
-                        if (cmd_output == false)
-			{
-			    return 1; //Return code for failure
-			}
-                    }
+		    if (last_output == true && v.at(i) == "&&")
+		    {
+			++i;
+		    }
+		    else if (last_output == false && v.at(i) == "||")
+		    {
+		        ++i;
+		    }
+		    else
+		    {
+                        bool cmd_output = execute(command_to_execute);
+		        last_output = cmd_output;
+                        command_to_execute.clear();
+                        bool cnt_output = connector(cmd_output, v.at(i));
+                        if (cnt_output == false)
+                        {   
+			    if (cmd_output == true)
+			    {       
+			        ++i;
+			    }
+                            if (cmd_output == false)
+			    {
+			        return 1; //Return code for failure
+			    }
+                        }
+		    }
                 }
                 else
                 {
@@ -147,29 +159,35 @@ class Shell {
                 for(unsigned j = 0; j < v.at(i).size(); ++j)
                 {
                     //Tests whether or not we found a connector.
-                    if(v.at(i).at(j) == '|' && v.at(i).at(j + 1) == '|')
-                    {
-                        if(temp != "")
+		    if(v.at(i).at(j) == '|' && j + 1 != v.at(i).size())
+		    {
+                        if(v.at(i).at(j + 1) == '|')
                         {
-                            commands.push_back(temp);
-                        }
+                           if(temp != "")
+                            {
+                                commands.push_back(temp);
+                            }
 
-                        temp = "||";
-                        commands.push_back(temp);
-                        temp = "";
-                        ++j;
-                    }
-                    else if(v.at(i).at(j) == '&' && v.at(i).at(j + 1) == '&')
-                    {
-                        if(temp != "")
-                        {
+                            temp = "||";
                             commands.push_back(temp);
+                            temp = "";
+                            ++j;
                         }
+		    }
+		    else if(v.at(i).at(j) == '&' && j + 1 != v.at(i).size())
+		    {	    
+		        if( v.at(i).at(j + 1) == '&')
+                        {
+                            if(temp != "")
+                            {
+                               commands.push_back(temp);
+                            }
                         
-                        temp = "&&";
-                        commands.push_back(temp);
-                        temp = "";
-                        ++j;
+                            temp = "&&";
+                            commands.push_back(temp);
+                            temp = "";
+                            ++j;
+			}
                     }
                     else if(v.at(i).at(j) == ';')
                     {
