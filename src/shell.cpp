@@ -49,11 +49,16 @@ class Shell {
                     }
                     else if(command != "") //If we entered an actual command
                     {
-		        if(parse(command) == 2)
+			int result = parse(command);
+		        if(result == 2)
                         {
                             exit_override = true;
 			    exit(0);
                         }
+			else if(result == 1)
+			{
+			    cout << "Error: Command Invalid." << endl;
+			}
                     }
                 }
             }
@@ -72,6 +77,7 @@ class Shell {
             {
                     v.push_back(*it); 
             }
+	    //Takes each tokenized phrase and anaylzes it for different cases.
             v = analyze_split(v);
 
 	    if (v.at(0) == "exit")
@@ -80,7 +86,7 @@ class Shell {
 	    }
                             
             vector<string> command_to_execute;
-	    bool last_output;
+	    bool last_output = false;
             for (unsigned i = 0; i < v.size(); ++i)
             {
                 //If comment is seen, we don't push it to our command.
@@ -105,9 +111,9 @@ class Shell {
                 }
                 else if (v.at(i) == "||" || v.at(i) == "&&" || v.at(i) == ";")
                 {
-		    if (last_output == true && v.at(i) == "&&")
+		    if (last_output == false && v.at(i) == "&&")
 		    {
-			++i;
+			return 1;
 		    }
 		    else if (last_output == false && v.at(i) == "||")
 		    {
@@ -214,6 +220,12 @@ class Shell {
             //Push the string in case there are no connectors.
             //commands.push_back(temp);
             //Input should now be organized correctly by parts.
+	    
+           //Test to see if commands are actually parsed correctly.
+	   /* for (unsigned i = 0; i < commands.size(); i++)
+	    {
+		    cout << commands.at(i) << endl;
+	    }*/
             return commands;
         }
         
