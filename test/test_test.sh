@@ -1,4 +1,4 @@
-# Test if file path exists
+# Test if the file path exists
 test -e /main.cpp
 	# returns true
 test -e /blah.cpp
