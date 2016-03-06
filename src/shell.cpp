@@ -77,104 +77,114 @@ class Shell {
             {
                     v.push_back(*it); 
             }
-	    //Takes each tokenized phrase and anaylzes it for different cases.
+	        //Takes each tokenized phrase and anaylzes it for different cases.
             v = analyze_split(v);
-
-	    if (v.at(0) == "exit")
-	    {
-		    return 2;
-	    }
-                            
+            
+            //Quick check if the first command is exit.
+	        if (v.at(0) == "exit")
+	        {
+		        return 2;
+	        }
+	        
+	        //Organize the vector by precedence.
+	        vector<vector <string> > commands = organize_commands(v);
+	        
+	        //Create a new vector to store and run commands.
+	        //Also create a last_output variable, telling us whether or not the
+	        //last output of a command was true or false.
             vector<string> command_to_execute;
-	    bool last_output = false;
-            for (unsigned i = 0; i < v.size(); ++i)
+	        int last_output = 2; //0 - false 1 - true
+            
+            for (unsigned i = 0; i < commands.size(); ++i)
             {
-                //If comment is seen, we don't push it to our command.
-                //Instead, we execute it and jump out of the loop.
-                if(v.at(i).at(0) == '#')
+                    
+                for (unsigned j = 0; j < commands.at(i).size(); ++j)
                 {
-                    execute(command_to_execute);
-                    return 1;
-                }
-                else if (i == (unsigned)v.size() - 1)
-                {
-                    if (v.at(i) == "exit")
+                    //std::cout << commands.at(i).at(j) << std::endl; Use to output commands
+                    //If comment is seen, we don't push it to our command.
+                    //Instead, we execute it and jump out of the loop.
+                    if(commands.at(i).at(j).at(0) == '#')
                     {
-                        return 2;
+                        execute(command_to_execute);
+                        return 4; //Error code for command
                     }
-                    command_to_execute.push_back(v.at(i));
-                    bool temp = execute(command_to_execute);
-                    if (temp == false)
+                    //If a connector is detected.
+                    else if (commands.at(i).at(j) == "||" || commands.at(i).at(j) == "&&" || commands.at(i).at(j) == ";")
                     {
-                        return 2; //Return code for exit
+                        //Case 0: The connector is either the only element in the vector OR the first element
+                        //Also does quick checks for && in case the past commands failed already
+                        //Check if the command failed last time and the connector is an "and" symbol
+    		            if (last_output == 0 && commands.at(i).at(j) == "&&")
+    		            {
+    			            return 1;
+    		            }
+    		            //Checks if the last command succeeded, the input is &&, and that it is either the only command OR the first element
+    		            //in another command.
+    		            else if (last_output == 1 && commands.at(i).at(0) == "&&")
+    		            { 
+    		                last_output = last_output;
+    		            }
+    		            //Checks if the last command failed and that the connector is an "or" symbol
+    		            else if (last_output == 0 && commands.at(i).at(j) == "||")
+    		            {
+    		                ++i;
+    		            }
+    		            //Checks if the last command succeeded, the input is ||, and that it is either the only command OR the first element
+    		            //in another command.
+    		            else if(last_output == 1 && commands.at(i).at(0) == "||")
+    		            {
+    		                return 5; //We know that if it is either of those cases, then we don't do anything else to the rest of the input.
+    		            }
+    		            else
+    		            {
+    		                //CASE 1: There are inputs BEFORE the connector.
+    		                //Execute the command. Store its result in a boolean.
+                            bool cmd_output = execute(command_to_execute);
+    		                last_output = cmd_output;
+                            command_to_execute.clear(); //Clear the vector to add in new commands.
+                            //Check whether or not to add in new commands depending on the connector.
+                            bool cnt_output = connector(cmd_output, commands.at(i).at(j));
+                            
+                            if (cnt_output == false)
+                            {   
+    			                if (cmd_output == 1) //If the first command failed and we have an || connector after
+    			                {
+    			                    break; //Just return since nothing else is supposed to happen for that command.
+    			                }
+                                if (cmd_output == 0) //If the first command failed and we have an && connector after
+    			                {
+    			                    return 1; //Return code for failure
+    			                }
+                            }
+    		            }
                     }
-                }
-                else if (v.at(i) == "||" || v.at(i) == "&&" || v.at(i) == ";")
-                {
-		    if (last_output == false && v.at(i) == "&&")
-		    {
-			return 1;
-		    }
-		    else if (last_output == false && v.at(i) == "||")
-		    {
-		        ++i;
-		    }
-		    else
-		    {
-                        bool cmd_output = execute(command_to_execute);
-		        last_output = cmd_output;
-                        command_to_execute.clear();
-                        bool cnt_output = connector(cmd_output, v.at(i));
-                        if (cnt_output == false)
-                        {   
-			    if (cmd_output == true)
-			    {       
-			        ++i;
-			    }
-                            if (cmd_output == false)
-			    {
-			        return 1; //Return code for failure
-			    }
+                    //CASE 2: The command has no connectors AND/OR this is the last element of the command
+                    else if (j == (unsigned)commands.at(i).size() - 1)
+                    {
+                        if (commands.at(i).at(j) == "exit")
+                        {
+                            return 2;
                         }
-		    }
+                        command_to_execute.push_back(commands.at(i).at(j));
+                        bool temp = execute(command_to_execute);
+                        command_to_execute.clear();
+                        if (temp == false)
+                        {
+                            return 1; //Return code for error
+                        }
+                    }
+                    //CASE 3: An piece of a command that is not a connector is pushed in.
+                    else
+                    {
+                        command_to_execute.push_back(commands.at(i).at(j));
+                    }
+                   // cout << v.at(i) << endl;
                 }
-                else
-                {
-                    command_to_execute.push_back(v.at(i));
-                }
-               // cout << v.at(i) << endl;
             }
             return 0; //Return code for command sucessfully parsed
+            
         }
-        /*Now that we have the command class, we can push commands into a vector.  Let us
-	 * understand that a new command is a command surrounded by paratheses by default.
-	 * So, a command without paratheses is treated as a regular command with only one
-	 * set of paratheses around it.
-	 * This makes parsing for these cases simpler since we can use our old algroithm
-	 * for parsing just one command with multiple characters.
-	 *
-	 * Now, if we have sets of commands surrounding by a paratheses, i.e.
-	 * (ls && mkdir) && (pwd || test)
-	 *
-	 * We know introduce types into our command class. See here that we have two
-	 * commands surrounded by paratheses and a connector. This means that we must
-	 * find out if each paratheses is true or false and then call the connector
-	 * logic if a condition is made.
-	 *
-	 * So, we have two types of "commands": The command itself and the connector.
-	 * Distinguishing these will allow us to manipulate what to do after a command
-	 * is executed. We can use a boolean result to indicate whether or not a command
-	 * has succeeded. If the type is a connector, we don't care about the result.
-	 * Instead, we call the connector function to see if the previous command
-	 * succeeded. If it succeeds, we will call the next set of commands. Again,
-	 * this does NOT matter at all if we one ONLY one command with no paratheses (aka,
-	 * anything we did in the second assignment).
-	 *
-	 * So, the execution of the commmands now takes in the vector of commands and
-	 * executes commands in every element of that vector until something that causes
-	 * the command to fail will run. If not, it'll run through the vector.
-        */
-        
+
         //Accounts for connectors mixed with other text
         vector<string> analyze_split(vector<string>& v)
         {
@@ -188,8 +198,8 @@ class Shell {
                 for(unsigned j = 0; j < v.at(i).size(); ++j)
                 {
                     //Tests whether or not we found a connector.
-		    if(v.at(i).at(j) == '|' && j + 1 != v.at(i).size())
-		    {
+		            if(v.at(i).at(j) == '|' && j + 1 != v.at(i).size())
+		            {
                         if(v.at(i).at(j + 1) == '|')
                         {
                            if(temp != "")
@@ -202,21 +212,21 @@ class Shell {
                             temp = "";
                             ++j;
                         }
-		    }
-		    else if(v.at(i).at(j) == '&' && j + 1 != v.at(i).size())
-		    {	    
-		        if( v.at(i).at(j + 1) == '&')
-                        {
-                            if(temp != "")
+		            }
+		            else if(v.at(i).at(j) == '&' && j + 1 != v.at(i).size())
+		            {	    
+		                if( v.at(i).at(j + 1) == '&')
                             {
-                               commands.push_back(temp);
-                            }
+                                if(temp != "")
+                                {
+                                commands.push_back(temp);
+                                }
                         
-                            temp = "&&";
-                            commands.push_back(temp);
-                            temp = "";
-                            ++j;
-			}
+                                temp = "&&";
+                                commands.push_back(temp);
+                                temp = "";
+                                ++j;
+			                }
                     }
                     else if(v.at(i).at(j) == ';')
                     {
@@ -226,6 +236,39 @@ class Shell {
                         }
                         
                         temp = ";";
+                        commands.push_back(temp);
+                        temp = "";
+                    }
+                    else if(v.at(i).at(j) == '#')
+                    {
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+                
+                        temp = "#";
+                        commands.push_back(temp);
+                        temp = "";
+                    }
+                    else if(v.at(i).at(j) == '(')
+                    {
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+                
+                        temp = "(";
+                        commands.push_back(temp);
+                        temp = "";
+                    }
+                    else if(v.at(i).at(j) == ')')
+                    {
+                        if(temp != "")
+                        {
+                            commands.push_back(temp);
+                        }
+                
+                        temp = ")";
                         commands.push_back(temp);
                         temp = "";
                     }
@@ -245,10 +288,73 @@ class Shell {
             //Input should now be organized correctly by parts.
 	    
            //Test to see if commands are actually parsed correctly.
-	   /* for (unsigned i = 0; i < commands.size(); i++)
+	    /*for (unsigned i = 0; i < commands.size(); i++)
 	    {
 		    cout << commands.at(i) << endl;
 	    }*/
+            return commands;
+        }
+        //TO DO: Check for erroneous paratheses. *****************************************************
+        vector<vector<string> >organize_commands(vector<string> whole_command)
+        {
+            //Vector to be returned
+            vector<vector<string> > commands;
+            //Vector of a single command that is constantly pushed into the vector above.
+            vector<string> command;
+            bool para_open = false; //Checks if the parathese is open or not.
+            
+            for(unsigned i = 0; i < whole_command.size(); ++i)
+            {
+                if(whole_command.at(i) == "(")
+                {
+                    //We now know that there is an open paratheses.
+                    para_open = true;
+                    //Push the current command onto the vector.
+                    if(!command.empty())
+                    {
+                        commands.push_back(command);
+                        command.clear();
+                    }
+
+                }
+                else if(para_open == true)
+                {
+                    //There is a closed paratheses which will close the inner command.
+                    if(whole_command.at(i) == ")")
+                    {
+                        //We know that this is a closed set of paratheses, so we push that command on there.
+                        para_open = false;
+                        commands.push_back(command);
+                        command.clear();
+                    }
+                    else
+                    {
+                        //In this case we just add the piece of the command onto the vector before we close it.
+                        command.push_back(whole_command.at(i));
+                    }
+                }
+                else
+                {   //Just add the piece of the command onto the vector.
+                    command.push_back(whole_command.at(i));
+                }
+            }
+            //If no paratheses were left in the vector we simply check of any commands were put into the vector
+            //And push that in as well.
+            if(!command.empty())
+            {
+                commands.push_back(command);
+            }
+
+            //Test to see if the commands are actually organized correctly.
+            /*for (unsigned i = 0; i < commands.size(); ++i)
+	        {
+	            for(unsigned j = 0; j < commands.at(i).size(); j++)
+	            {
+	                std::cout << commands.at(i).at(j) << std::endl;
+	            }
+	            std::cout << "COMMAND" << std::endl;
+	        }*/
+            
             return commands;
         }
         
