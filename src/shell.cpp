@@ -146,11 +146,34 @@ class Shell {
             }
             return 0; //Return code for command sucessfully parsed
         }
-        /*Potential Problem: This algorithm will keep repeating connectors,
-        ie. ls&&&&ls
-        And since we split the two pairs of && into two elements, it'll attempt
-        to call the connector twice. I suppose we can check for the when we
-        start executing the command.*/
+        /*Now that we have the command class, we can push commands into a vector.  Let us
+	 * understand that a new command is a command surrounded by paratheses by default.
+	 * So, a command without paratheses is treated as a regular command with only one
+	 * set of paratheses around it.
+	 * This makes parsing for these cases simpler since we can use our old algroithm
+	 * for parsing just one command with multiple characters.
+	 *
+	 * Now, if we have sets of commands surrounding by a paratheses, i.e.
+	 * (ls && mkdir) && (pwd || test)
+	 *
+	 * We know introduce types into our command class. See here that we have two
+	 * commands surrounded by paratheses and a connector. This means that we must
+	 * find out if each paratheses is true or false and then call the connector
+	 * logic if a condition is made.
+	 *
+	 * So, we have two types of "commands": The command itself and the connector.
+	 * Distinguishing these will allow us to manipulate what to do after a command
+	 * is executed. We can use a boolean result to indicate whether or not a command
+	 * has succeeded. If the type is a connector, we don't care about the result.
+	 * Instead, we call the connector function to see if the previous command
+	 * succeeded. If it succeeds, we will call the next set of commands. Again,
+	 * this does NOT matter at all if we one ONLY one command with no paratheses (aka,
+	 * anything we did in the second assignment).
+	 *
+	 * So, the execution of the commmands now takes in the vector of commands and
+	 * executes commands in every element of that vector until something that causes
+	 * the command to fail will run. If not, it'll run through the vector.
+        */
         
         //Accounts for connectors mixed with other text
         vector<string> analyze_split(vector<string>& v)
