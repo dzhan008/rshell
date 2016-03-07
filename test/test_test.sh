@@ -8,7 +8,7 @@ test -e bin/main.cpp
 test -e main.cpp/bin
     # returns false   
 test -e main.cpp
-	# returns false
+	# returns true
 test -e /main.cpp
 	# returns false
 [ -e main.cpp ]
@@ -17,12 +17,12 @@ test -e /main.cpp
 	# returns false
 [ -e bin ]
     # returns true
-[ -e bin/main.cpp]
+*[ -e bin/main.cpp]
     # returns true
     
 # Tests if file path exists and is a file
 test -f main.cpp
-	# returns false
+	# returns true
 test -f /bin
 	# returns false
 test -f bin/dir
@@ -30,7 +30,7 @@ test -f bin/dir
 test -f bin/main.cpp
     # returns true
 [ -f main.cpp ]
-	# return false
+	# return true
 [ -f /bin.cpp ]
 	# return false
 [ -f bin/dir ]
