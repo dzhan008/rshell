@@ -1,3 +1,4 @@
+bin/rshell.o
 echo "User enters two working commands with ;"
 ls ; pwd
 echo "User enters two working commands with ;(no space)"
