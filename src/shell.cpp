@@ -410,6 +410,16 @@ class Shell {
                 {
                     return false;
                 }
+		else if (cmd.at(0) == "test")
+		{
+			//Test code here
+			return false;
+		}
+		else if (cmd.at(0) == "[" && cmd.at(cmd.size() - 1) == "]")
+		{
+			//Test code here
+			return true;
+		}
                 else
                 {
 		        char **temp = new char*[cmd.size() + 1];
