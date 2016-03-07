@@ -10,13 +10,13 @@
 
 # Tests precedence operator with 3 commands-end of command line
 echo A || (echo B || echo C && echo D)
-	# A B C D
+	# A
 echo A || (echo B && echo C && echo D)
 	# A 
 
 # Tests precedence operator-2 commands-end of command line
 echo A || echo B || (echo C && echo D)
-	# A C D 
+	# A
 
 # Tests precedence operator-2 commands-middle of command line
 echo A || (echo B || echo C) && echo D
@@ -26,11 +26,13 @@ echo A && (echo B || echo C) || echo D
 
 # Tests precedence operator-2 commands-beginning of command line
 (echo A || echo B) || echo C || echo D
-	# A D
+	# A
 (echo A || echo B) && echo C || echo D
 	# A C
+(echo A || blah) && echo B
 
 # Tests precedence operator with 3 commands-beginning of command line
 (echo A && echo B && echo C) || echo D
 	# A B C
 (echo A && echo B && echo C) && echo D
+	# A B C D
