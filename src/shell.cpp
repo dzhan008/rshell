@@ -374,7 +374,6 @@ class Shell {
                 }
                 else if (cmd.at(0) == "exit" && cmd.size() == 1)
                 {
-                    cout << "Exit statement hit." << endl;
                     return false;
                 }
                 else
