@@ -13,11 +13,12 @@ using namespace boost;
 using namespace std;
 
 void parseCommand(); 
-int isFile(const char *path);
-int isDirectory(const char *path);
-bool check(const vector<string> cmdLine);
-int test(const vector<string> cmdLine);
-bool execute(vector<string> cmdLine);
+int isFile(const char*);
+int isDirectory(const char*);
+int exists(const char*);
+bool check(const vector<string>&);
+void parseFilePath(vector<string>&);
+int runTestCommand(vector<string>&);
 
 //Splits command line into seperate strings based on spaces
 void parseCommand()
@@ -32,13 +33,13 @@ void parseCommand()
     char_separator<char> sep(" ");
     tokenizer tok(command, sep);
 
-    for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+    for(tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
     {
         commandLine.push_back(*it); 
     }
     if(check(commandLine) == true)
     {
-        test(commandLine);
+        runTestCommand(commandLine);
     }
     else
     {
@@ -46,7 +47,7 @@ void parseCommand()
     }
 }
 
-//0 is returned on success, -1 for error
+//1 if type, 0 if not
 int isFile(const char *path)
 {
     struct stat path_stat;
@@ -59,8 +60,14 @@ int isDirectory(const char *path)
     stat(path, &path_stat);
     return S_ISDIR(path_stat.st_mode);
 }
+// 0 if exists, -1 if it does not
+int exists(const char* path)
+{
+    struct stat path_stat;
+    return stat(path, &path_stat);
+}
 
-bool check(const vector<string> cmdLine)
+bool check(const vector<string>& cmdLine)
 {
     //Checks if proper test call was made
     if(cmdLine.at(0) != "test" && cmdLine.at(0) != "[")
@@ -72,75 +79,141 @@ bool check(const vector<string> cmdLine)
     if(cmdLine.at(0) == "[" && cmdLine.at(cmdLine.size()-1) != "]")
     {
         cout << "-bash: syntax error near unexpected token '" 
-        << cmdLine.at(cmdLine.size()-1) << "'\n";
+        << cmdLine.at(cmdLine.size()-1) << endl;
         return false;
     }
     //Check if proper flag was called. Note that other flags exist but for this
     //program user is limited to only 3 flags
-    // if(cmdLine.at(1) != "-e" && cmdLine.at(1) != "-f" && cmdLine.at(1) != "-d")
-    // {
-    //     cout << "-bash: " << cmdLine.at(0) << ": " << cmdLine.at(1) 
-    //     << ": unary operator expected\n";
-    //     return false;
-    // }
-    return true;
-}
-
-int test(const vector<string> cmdLine) 
-{
-    if(cmdLine.at(1) == "-f")
+    if(cmdLine.at(1) != "-e" && cmdLine.at(1) != "-f" && cmdLine.at(1) != "-d")
     {
-        //Execute file search and test if regular file
-        cout << "(True)\n";
-        return 0;
-        cout << "(False)\n";
-        return 1;
-    }
-    else if(cmdLine.at(1) == "-d")
-    {
-        //Execute file search and test if it is a directory
-        cout << "(True)\n";
-        return 0;
-        cout << "(False)\n";
-        return 1;
-    }
-    else if(cmdLine.at(1) == "-e")
-    {
-        //Execute file search
-        cout << "(True)\n";
-        return 0;
-        cout << "(False)\n";
-        return 1;
-    }
-}
-
-bool execute(vector<string> cmdLine)
-{
-    char* temp[cmdLine.size()+ 1];
-    //Sets the command in a c-string form.
-    for(int i = 0; i < cmdLine.size(); ++i)
-    {
-        temp[i] = (char*)cmdLine.at(i).c_str();
-    }
-    temp[cmdLine.size()] = NULL;
-    
-    pid_t pid = fork();
-    if (pid == 0)
-    {
-        if(execvp(temp[0], temp) == -1)
+        if(cmdLine.size() != 2 && cmdLine.size() != 3)
         {
-            perror("exec");
+            cout << "-bash: " << cmdLine.at(0) << ": " << cmdLine.at(1) 
+            << ": unary operator expected\n";
             return false;
         }
     }
-    else
+    return true;
+}
+
+//Seperates command line into a string with just the file path
+void parseFilePath(vector<string>& cmdLine)
+{
+    string filePath;
+    if(cmdLine.at(1) == "-e" || cmdLine.at(1) == "-f" || cmdLine.at(1) == "-d")
     {
-        while (wait(0) == -1)
+        filePath = cmdLine.at(2);
+    }
+    else //If no flag was specified
+    {
+        filePath = cmdLine.at(1);
+    }
+    typedef tokenizer<char_separator<char> > tokenizer;
+    char_separator<char> sep("/");
+    tokenizer tok(filePath, sep);
+
+    for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+    {
+        cmdLine.push_back(*it); 
+    }
+}
+
+int runTestCommand(vector<string>& cmdLine) 
+{
+    if(cmdLine.at(1) == "-f")
+    {
+        parseFilePath(cmdLine);
+        //Checks every single file within the path to see if it exists
+        for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
-            perror("wait");
+            char temp[cmdLine.at(i).size()+1];
+            for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
+            {
+                temp[i] = cmdLine.at(i).at(j);
+            }
+            temp[cmdLine.at(i).size()] = '\0';
+            //If file does not exist, exit function and return false
+            if(exists(temp) == -1)
+            {
+                cout << "(False)\n";
+                return 1;
+            }
+        }
+        //Does a final check for the file type on the last item in cmdLine
+        char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+        for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+        {
+            temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+        }
+        if(isFile(temp) == 0)
+        {
+            cout << "(False)\n";
+            return 1;
+        }
+        else
+        {
+            cout << "(True)\n";
+            return 0;
         }
     }
-    return true;
+    else if(cmdLine.at(1) == "-d")
+    {
+        parseFilePath(cmdLine);
+        for(unsigned i = 0; i < cmdLine.size(); ++i)
+        {
+            char temp[cmdLine.at(i).size()+1];
+            for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
+            {
+                temp[i] = cmdLine.at(i).at(j);
+            }
+            temp[cmdLine.at(i).size()] = '\0';
+            //If file does not exist, exit function and return false
+            if(exists(temp) == -1)
+            {
+                cout << "(False)\n";
+                return 1;
+            }
+        }
+        //Does a final check for the file type on the last item in the file
+        char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+        for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+        {
+            temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+        }
+        if(isDirectory(temp) == 0)
+        {
+            cout << "(False)\n";
+            return 1;
+        }
+        else
+        {
+            cout << "(True)\n";
+            return 0;
+        }
+    }
+    else if(cmdLine.at(1) == "-e")
+    {
+        cout << "Filepath: " << cmdLine.at(2) << endl;
+        cout << "Flag: -e \n";
+        parseFilePath(cmdLine);
+        for(unsigned i = 0; i < cmdLine.size(); ++i)
+        {
+            char temp[cmdLine.at(i).size()+1];
+            for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
+            {
+                temp[i] = cmdLine.at(i).at(j);
+            }
+            temp[cmdLine.at(i).size()] = '\0';
+            //If file does not exist, exit function and return false
+            if(exists(temp) == -1)
+            {
+                cout << "(False)\n";
+                return 1;
+            }
+        }
+        cout << "(True)\n";
+        return 0;
+    }
 }
 
 int main()
