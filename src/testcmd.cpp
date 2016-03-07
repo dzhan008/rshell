@@ -133,6 +133,7 @@ int runTestCommand(vector<string>& cmdLine)
         {
             path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
         }
+        char temp1[path1.size()+1]; char temp2[path2.size()+1];
         //Checks every single file within the path to see if it exists
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
@@ -155,7 +156,6 @@ int runTestCommand(vector<string>& cmdLine)
                 //Otherwise check the combined path
                 else if(i == 1)
                 {
-                    char temp1[path1.size()+1];
                     for(unsigned j = 0; j < path1.size(); ++j)
                     {
                         temp1[j] = path1.at(j);
@@ -169,7 +169,6 @@ int runTestCommand(vector<string>& cmdLine)
                 }
                 else //i ==2
                 {
-                    char temp2[path2.size()+1];
                     for(unsigned j = 0; j < path2.size(); ++j)
                     {
                         temp2[j] = path2.at(j);
@@ -191,20 +190,51 @@ int runTestCommand(vector<string>& cmdLine)
         }
         //At this point we know the file path exists. Now we will do a final
         //check for the file type on the last item in cmdLine
-        char temp[cmdLine.at(cmdLine.size()-1).size()+1];
-        for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+        if(cmdLine.size() == 1)
         {
-            temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+            char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+            for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+            {
+                temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+            }
+            temp[cmdLine.at(cmdLine.size()-1).size()] = '\0';
+        
+            if(isFile(temp) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
-        if(isFile(temp) == 0)
+        else if (cmdLine.size() == 2)
         {
-            cout << "(True)\n";
-            return 0;
+            if(isFile(temp1) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
         else
         {
-            cout << "(False)\n";
-            return 1;
+            if(isFile(temp2) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
     }
     else if(cmdLine.at(1) == "-d")
@@ -221,6 +251,7 @@ int runTestCommand(vector<string>& cmdLine)
         {
             path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
         }
+        char temp1[path1.size()+1]; char temp2[path2.size()+1];
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
             char temp[cmdLine.at(i).size()+1];
@@ -241,7 +272,6 @@ int runTestCommand(vector<string>& cmdLine)
                 //Otherwise check the combined path
                 else if(i == 1)
                 {
-                    char temp1[path1.size()+1];
                     for(unsigned j = 0; j < path1.size(); ++j)
                     {
                         temp1[j] = path1.at(j);
@@ -255,7 +285,6 @@ int runTestCommand(vector<string>& cmdLine)
                 }
                 else //i ==2
                 {
-                    char temp2[path2.size()+1];
                     for(unsigned j = 0; j < path2.size(); ++j)
                     {
                         temp2[j] = path2.at(j);
@@ -276,20 +305,51 @@ int runTestCommand(vector<string>& cmdLine)
             }
         }
         //Does a final check for the file type on the last item in the file
-        char temp[cmdLine.at(cmdLine.size()-1).size()+1];
-        for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+        if(cmdLine.size() == 1)
         {
-            temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+            char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+            for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
+            {
+                temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
+            }
+            temp[cmdLine.at(cmdLine.size()-1).size()] = '\0';
+        
+            if(isDirectory(temp) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
-        if(isDirectory(temp) == 0)
+        else if (cmdLine.size() == 2)
         {
-            cout << "(True)\n";
-            return 0;
+            if(isDirectory(temp1) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
         else
         {
-            cout << "(False)\n";
-            return 1;
+            if(isDirectory(temp2) == 1)
+            {
+                cout << "(True)\n";
+                return 0;
+            }
+            else
+            {
+                cout << "(False)\n";
+                return 1;
+            }
         }
     }
     else if(cmdLine.at(1) == "-e")
