@@ -94,6 +94,7 @@ class Shell {
 	        //last output of a command was true or false.
             vector<string> command_to_execute;
 	        int last_output = 2; //0 - false 1 - true
+	        int cnt_output = 2;
             
             for (unsigned i = 0; i < commands.size(); ++i)
             {
@@ -111,6 +112,9 @@ class Shell {
                     //If a connector is detected.
                     else if (commands.at(i).at(j) == "||" || commands.at(i).at(j) == "&&" || commands.at(i).at(j) == ";")
                     {
+                        //std::cout << commands.at(i).at(j) << std::endl;
+                        //std::cout << last_output << " " << cnt_output << std::endl;
+
                         //Case 0: The connector is either the only element in the vector OR the first element
                         //Also does quick checks for && in case the past commands failed already
                         //Check if the command failed last time and the connector is an "and" symbol
@@ -120,9 +124,22 @@ class Shell {
     		            }
     		            //Checks if the last command succeeded, the input is &&, and that it is either the only command OR the first element
     		            //in another command.
-    		            else if (last_output == 1 && commands.at(i).at(0) == "&&")
-    		            { 
-    		                last_output = last_output;
+    		            else if (last_output == 1 && commands.at(i).at(0) == "&&" && j == 0)
+    		            {
+    		                cnt_output = 1; //We want to simulate that && connector goes true, so we make out cnt_output to 1 to indicate that
+    		                                // we can go on with the next command.
+    		            }
+    		            //Checks for past || operators. If the command before || runs true, everything afterward should
+                        //not run at all.
+                        else if(last_output == 1 && cnt_output == 0)
+                        {
+                            break;
+                        }
+    		            //Checks if the last command failed, the input is ||, and that it is either the only command OR the first element
+    		            //in another command.
+    		            else if (last_output == 0 && commands.at(i).at(0) == "||")
+    		            {
+    		                last_output = 2;
     		            }
     		            //Checks if the last command failed and that the connector is an "or" symbol
     		            else if (last_output == 0 && commands.at(i).at(j) == "||")
@@ -133,7 +150,8 @@ class Shell {
     		            //in another command.
     		            else if(last_output == 1 && commands.at(i).at(0) == "||")
     		            {
-    		                return 5; //We know that if it is either of those cases, then we don't do anything else to the rest of the input.
+    		                cnt_output = 0;
+    		                break; //We know that if it is either of those cases, then we don't do anything else to the rest of the input.
     		            }
     		            else
     		            {
@@ -143,9 +161,9 @@ class Shell {
     		                last_output = cmd_output;
                             command_to_execute.clear(); //Clear the vector to add in new commands.
                             //Check whether or not to add in new commands depending on the connector.
-                            bool cnt_output = connector(cmd_output, commands.at(i).at(j));
+                            cnt_output = connector(cmd_output, commands.at(i).at(j));
                             
-                            if (cnt_output == false)
+                            if (cnt_output == 0)
                             {   
     			                if (cmd_output == 1) //If the first command failed and we have an || connector after
     			                {
@@ -153,7 +171,7 @@ class Shell {
     			                }
                                 if (cmd_output == 0) //If the first command failed and we have an && connector after
     			                {
-    			                    return 1; //Return code for failure
+    			                    break; //Break because we're done with this command.
     			                }
                             }
     		            }
@@ -161,22 +179,37 @@ class Shell {
                     //CASE 2: The command has no connectors AND/OR this is the last element of the command
                     else if (j == (unsigned)commands.at(i).size() - 1)
                     {
-                        if (commands.at(i).at(j) == "exit")
+                        //Checks for past || operators. If the command before || runs true, everything afterward should
+                        //not run at all.
+                        if(last_output == 1 && cnt_output == 0)
+                        {
+                            break;
+                        }
+                        else if (commands.at(i).at(j) == "exit")
                         {
                             return 2;
                         }
+                        //Push the last command onto the vector
                         command_to_execute.push_back(commands.at(i).at(j));
-                        bool temp = execute(command_to_execute);
+                        bool cmd_output = execute(command_to_execute);
+                        last_output = cmd_output; //Check to see if the command failed.
                         command_to_execute.clear();
-                        if (temp == false)
+                        if (cmd_output == false)
                         {
-                            return 1; //Return code for error
+                            break; //Return code for error
                         }
                     }
                     //CASE 3: An piece of a command that is not a connector is pushed in.
                     else
                     {
-                        command_to_execute.push_back(commands.at(i).at(j));
+                        if(last_output == 1 && cnt_output == 0)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            command_to_execute.push_back(commands.at(i).at(j));
+                        }
                     }
                    // cout << v.at(i) << endl;
                 }
@@ -302,6 +335,7 @@ class Shell {
             //Vector of a single command that is constantly pushed into the vector above.
             vector<string> command;
             bool para_open = false; //Checks if the parathese is open or not.
+            int para_loc = 0;
             
             for(unsigned i = 0; i < whole_command.size(); ++i)
             {
@@ -315,6 +349,9 @@ class Shell {
                         commands.push_back(command);
                         command.clear();
                     }
+                    //Then, push the paratheses on the vector.
+                    command.push_back(whole_command.at(i));
+                    para_loc = command.size() - 1; //Store the location of the open paratheses.
 
                 }
                 else if(para_open == true)
@@ -323,7 +360,10 @@ class Shell {
                     if(whole_command.at(i) == ")")
                     {
                         //We know that this is a closed set of paratheses, so we push that command on there.
+                        //Afterwards we removed the opening paratheses since we know that is this is a closed
+                        //command.
                         para_open = false;
+                        command.erase(command.begin() + para_loc);
                         commands.push_back(command);
                         command.clear();
                     }
@@ -368,13 +408,11 @@ class Shell {
                 }
                 else if (cmd.at(0) == "exit" && cmd.size() == 1)
                 {
-                    cout << "Exit statement hit." << endl;
                     return false;
                 }
                 else
                 {
-		    char **temp = new char*[cmd.size() + 1];
-               // char* temp[cmd.size()+ 1];
+		        char **temp = new char*[cmd.size() + 1];
                 //Sets the command in a c-string form.
                 for(unsigned i = 0; i < cmd.size(); ++i)
                 {
