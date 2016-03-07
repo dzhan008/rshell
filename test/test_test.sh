@@ -15,18 +15,26 @@ test -e /main.cpp
 	# returns false
 [ -e /main.cpp ]
 	# returns false
-
+[ -e bin ]
+    # returns true
+[ -e bin/main.cpp]
+    # returns true
+    
 # Tests if file path exists and is a file
 test -f main.cpp
 	# returns false
 test -f /bin
 	# returns false
-test -f /bin/main.cpp
+test -f bin/dir
+    # returns false
+test -f bin/main.cpp
     # returns true
 [ -f main.cpp ]
 	# return false
 [ -f /bin.cpp ]
 	# return false
+[ -f bin/dir ]
+    # returns false
 [ -f bin/main.cpp ]
 	# returns true
 
@@ -35,15 +43,21 @@ test -d /bin
 	# returns true
 test -d bin
 	# returns true
+test -d bin/dir
+    # returns true
 test -d main.cpp
 	# returns false	
+test -d bin/main.cpp
+    # returns false
 [ -d /bin ]
 	# returns true
-[ -d bin ]
-	# returns true
+[ -d bin/dir ]
+    # returns true
 [ -d main.cpp ]
 	# returns false
-	
+[ -d bin/main.cpp ]
+    # returns false
+    
 # Tests test call without specifying flag
 test main.cpp
     # returns false
