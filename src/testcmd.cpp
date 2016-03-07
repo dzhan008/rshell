@@ -66,7 +66,6 @@ int exists(const char* path)
     struct stat path_stat;
     return stat(path, &path_stat);
 }
-
 bool check(const vector<string>& cmdLine)
 {
     //Checks if proper test call was made
@@ -108,10 +107,10 @@ void parseFilePath(vector<string>& cmdLine)
     {
         filePath = cmdLine.at(1);
     }
+    cmdLine.clear();
     typedef tokenizer<char_separator<char> > tokenizer;
     char_separator<char> sep("/");
     tokenizer tok(filePath, sep);
-
     for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
     {
         cmdLine.push_back(*it); 
@@ -123,23 +122,75 @@ int runTestCommand(vector<string>& cmdLine)
     if(cmdLine.at(1) == "-f")
     {
         parseFilePath(cmdLine);
+        //Saves the smaller paths. Note: Will only work with command lines with 
+        //no more than 3 commands
+        string path1; string path2;
+        if(cmdLine.size() == 2)
+        {
+             path1 = cmdLine.at(0) + "/" + cmdLine.at(1);
+        }
+        if(cmdLine.size() == 3)
+        {
+            path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
+        }
         //Checks every single file within the path to see if it exists
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
             char temp[cmdLine.at(i).size()+1];
             for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
             {
-                temp[i] = cmdLine.at(i).at(j);
+                temp[j] = cmdLine.at(i).at(j);
             }
             temp[cmdLine.at(i).size()] = '\0';
-            //If file does not exist, exit function and return false
+            //If file does not exist, check for current combined 
+            //file path existence
             if(exists(temp) == -1)
+            {
+                //If the file is the first in the path, return false
+                if(i == 0)
+                {
+                    cout << "(False)\n";
+                    return 1;
+                }
+                //Otherwise check the combined path
+                else if(i == 1)
+                {
+                    char temp1[path1.size()+1];
+                    for(unsigned j = 0; j < path1.size(); ++j)
+                    {
+                        temp1[j] = path1.at(j);
+                    }
+                    temp1[path1.size()] = '\0';
+                    if(exists(temp1) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
+                else //i ==2
+                {
+                    char temp2[path2.size()+1];
+                    for(unsigned j = 0; j < path2.size(); ++j)
+                    {
+                        temp2[j] = path2.at(j);
+                    }
+                    temp2[path2.size()] = '\0';
+                    if(exists(temp2) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
+            }
+            //If the first file in a path is regular, path is invalid. 
+            if(isFile(temp) == 1 && i == 0)
             {
                 cout << "(False)\n";
                 return 1;
             }
         }
-        //Does a final check for the file type on the last item in cmdLine
+        //At this point we know the file path exists. Now we will do a final
+        //check for the file type on the last item in cmdLine
         char temp[cmdLine.at(cmdLine.size()-1).size()+1];
         for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
         {
@@ -147,28 +198,78 @@ int runTestCommand(vector<string>& cmdLine)
         }
         if(isFile(temp) == 0)
         {
-            cout << "(False)\n";
-            return 1;
+            cout << "(True)\n";
+            return 0;
         }
         else
         {
-            cout << "(True)\n";
-            return 0;
+            cout << "(False)\n";
+            return 1;
         }
     }
     else if(cmdLine.at(1) == "-d")
     {
         parseFilePath(cmdLine);
+        //Saves the smaller paths. Note: Will only work with command lines with 
+        //no more than 3 commands
+        string path1; string path2;
+        if(cmdLine.size() == 2)
+        {
+             path1 = cmdLine.at(0) + "/" + cmdLine.at(1);
+        }
+        if(cmdLine.size() == 3)
+        {
+            path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
+        }
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
             char temp[cmdLine.at(i).size()+1];
             for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
             {
-                temp[i] = cmdLine.at(i).at(j);
+                temp[j] = cmdLine.at(i).at(j);
             }
             temp[cmdLine.at(i).size()] = '\0';
             //If file does not exist, exit function and return false
             if(exists(temp) == -1)
+            {
+                //If the file is the first in the path, return false
+                if(i == 0)
+                {
+                    cout << "(False)\n";
+                    return 1;
+                }
+                //Otherwise check the combined path
+                else if(i == 1)
+                {
+                    char temp1[path1.size()+1];
+                    for(unsigned j = 0; j < path1.size(); ++j)
+                    {
+                        temp1[j] = path1.at(j);
+                    }
+                    temp1[path1.size()] = '\0';
+                    if(exists(temp1) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
+                else //i ==2
+                {
+                    char temp2[path2.size()+1];
+                    for(unsigned j = 0; j < path2.size(); ++j)
+                    {
+                        temp2[j] = path2.at(j);
+                    }
+                    temp2[path2.size()] = '\0';
+                    if(exists(temp2) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
+            }
+            //If the first file in a path is regular, path is invalid. 
+            if(isFile(temp) == 1 && i == 0)
             {
                 cout << "(False)\n";
                 return 1;
@@ -182,30 +283,34 @@ int runTestCommand(vector<string>& cmdLine)
         }
         if(isDirectory(temp) == 0)
         {
-            cout << "(False)\n";
-            return 1;
+            cout << "(True)\n";
+            return 0;
         }
         else
         {
-            cout << "(True)\n";
-            return 0;
+            cout << "(False)\n";
+            return 1;
         }
     }
     else if(cmdLine.at(1) == "-e")
     {
-        cout << "Filepath: " << cmdLine.at(2) << endl;
-        cout << "Flag: -e \n";
         parseFilePath(cmdLine);
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
             char temp[cmdLine.at(i).size()+1];
             for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
             {
-                temp[i] = cmdLine.at(i).at(j);
+                temp[j] = cmdLine.at(i).at(j);
             }
             temp[cmdLine.at(i).size()] = '\0';
             //If file does not exist, exit function and return false
             if(exists(temp) == -1)
+            {
+                cout << "(False)\n";
+                return 1;
+            }
+            //If the first file in a path is regular, path is invalid. 
+            if(isFile(temp) == 1 && i == 0)
             {
                 cout << "(False)\n";
                 return 1;
