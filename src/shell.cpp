@@ -302,7 +302,8 @@ class Shell {
             //Vector of a single command that is constantly pushed into the vector above.
             vector<string> command;
             bool para_open = false; //Checks if the parathese is open or not.
-            
+            int para_loc = 0; //Detects the location of an opening paratheses.
+
             for(unsigned i = 0; i < whole_command.size(); ++i)
             {
                 if(whole_command.at(i) == "(")
@@ -315,7 +316,9 @@ class Shell {
                         commands.push_back(command);
                         command.clear();
                     }
-
+		    //Then, push the paratheses on the vector.
+		    command.push_back(whole_command.at(i));
+		    para_loc = command.size() - 1; //Store the location of the open paratheses.
                 }
                 else if(para_open == true)
                 {
@@ -323,7 +326,10 @@ class Shell {
                     if(whole_command.at(i) == ")")
                     {
                         //We know that this is a closed set of paratheses, so we push that command on there.
+			//Afterwards we remove the opening paratheses since we know that is this a closed
+			//command.
                         para_open = false;
+			command.erase(command.begin() + para_loc);
                         commands.push_back(command);
                         command.clear();
                     }
