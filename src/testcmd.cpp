@@ -355,6 +355,16 @@ int runTestCommand(vector<string>& cmdLine)
     else if(cmdLine.at(1) == "-e")
     {
         parseFilePath(cmdLine);
+        string path1; string path2;
+        if(cmdLine.size() == 2)
+        {
+             path1 = cmdLine.at(0) + "/" + cmdLine.at(1);
+        }
+        if(cmdLine.size() == 3)
+        {
+            path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
+        }
+        char temp1[path1.size()+1]; char temp2[path2.size()+1];
         for(unsigned i = 0; i < cmdLine.size(); ++i)
         {
             char temp[cmdLine.at(i).size()+1];
@@ -366,8 +376,39 @@ int runTestCommand(vector<string>& cmdLine)
             //If file does not exist, exit function and return false
             if(exists(temp) == -1)
             {
-                cout << "(False)\n";
-                return 1;
+                //If the file is the first in the path, return false
+                if(i == 0)
+                {
+                    cout << "(False)\n";
+                    return 1;
+                }
+                //Otherwise check the combined path
+                else if(i == 1)
+                {
+                    for(unsigned j = 0; j < path1.size(); ++j)
+                    {
+                        temp1[j] = path1.at(j);
+                    }
+                    temp1[path1.size()] = '\0';
+                    if(exists(temp1) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
+                else //i ==2
+                {
+                    for(unsigned j = 0; j < path2.size(); ++j)
+                    {
+                        temp2[j] = path2.at(j);
+                    }
+                    temp2[path2.size()] = '\0';
+                    if(exists(temp2) == -1)
+                    {
+                        cout << "(False)\n";
+                        return 1;
+                    }
+                }
             }
             //If the first file in a path is regular, path is invalid. 
             if(isFile(temp) == 1 && i == 0)
