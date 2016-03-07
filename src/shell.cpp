@@ -615,11 +615,12 @@ class Shell {
                 {
                     path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
                 }
-                char temp1[path1.size()+1]; char temp2[path2.size()+1];
+                char* temp1 = new char[path1.size()+1];
+	       	char* temp2 = new char[path2.size()+1];
                 //Checks every single file within the path to see if it exists
                 for(unsigned i = 0; i < cmdLine.size(); ++i)
                 {
-                    char temp[cmdLine.at(i).size()+1];
+                    char* temp = new char[cmdLine.at(i).size()+1];
                     for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
                     {
                         temp[j] = cmdLine.at(i).at(j);
@@ -674,7 +675,7 @@ class Shell {
                 //check for the file type on the last item in cmdLine
                 if(cmdLine.size() == 1)
                 {
-                    char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+                    char* temp = new char[cmdLine.at(cmdLine.size()-1).size()+1];
                     for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
                     {
                         temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
@@ -733,10 +734,11 @@ class Shell {
                 {
                     path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
                 }
-                char temp1[path1.size()+1]; char temp2[path2.size()+1];
+                char* temp1 = new char[path1.size()+1];
+	       	char* temp2 = new char[path2.size()+1];
                 for(unsigned i = 0; i < cmdLine.size(); ++i)
                 {
-                    char temp[cmdLine.at(i).size()+1];
+                    char* temp = new char[cmdLine.at(i).size()+1];
                     for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
                     {
                         temp[j] = cmdLine.at(i).at(j);
@@ -789,7 +791,7 @@ class Shell {
                 //Does a final check for the file type on the last item in the file
                 if(cmdLine.size() == 1)
                 {
-                    char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+                    char* temp = new char[cmdLine.at(cmdLine.size()-1).size()+1];
                     for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
                     {
                         temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
@@ -856,10 +858,11 @@ class Shell {
                 {
                     path2 = cmdLine.at(0) + "/" + cmdLine.at(1) + "/" + cmdLine.at(2);
                 }
-                char temp1[path1.size()+1]; char temp2[path2.size()+1];
+                char* temp1 = new char[path1.size()+1];
+	       	char* temp2 = new char[path2.size()+1];
                 for(unsigned i = 0; i < cmdLine.size(); ++i)
                 {
-                    char temp[cmdLine.at(i).size()+1];
+                    char* temp = new char[cmdLine.at(i).size()+1];
                     for(unsigned j = 0; j < cmdLine.at(i).size(); ++j)
                     {
                         temp[j] = cmdLine.at(i).at(j);
@@ -911,7 +914,7 @@ class Shell {
                 }
                 if(cmdLine.size() == 1)
                 {
-                    char temp[cmdLine.at(cmdLine.size()-1).size()+1];
+                    char* temp = new char[cmdLine.at(cmdLine.size()-1).size()+1];
                     for(unsigned i = 0; i < cmdLine.at(cmdLine.size()-1).size(); ++i)
                     {
                         temp[i] = cmdLine.at(cmdLine.size()-1).at(i);
